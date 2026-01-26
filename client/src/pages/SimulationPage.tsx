@@ -160,16 +160,9 @@ export default function SimulationPage() {
                 )}
             </div>
 
-            <div className="h-64 border-t border-white/10 bg-black/20">
-                 <div className="p-2 border-b border-white/5 text-[10px] font-mono uppercase text-muted-foreground flex justify-between items-center">
-                    <span>System Visualizer</span>
-                    <div className="flex gap-1">
-                        <div className="w-1 h-1 rounded-full bg-primary animate-pulse" />
-                        <div className="w-1 h-1 rounded-full bg-primary/50 animate-pulse delay-75" />
-                        <div className="w-1 h-1 rounded-full bg-primary/20 animate-pulse delay-150" />
-                    </div>
-                 </div>
-                 <div className="h-[calc(100%-25px)] w-full bg-black/50 relative overflow-hidden">
+            <div className="h-full border-t border-white/10 bg-black/20">
+                 <div className="p-3 border-b border-white/5 text-[10px] font-mono uppercase text-muted-foreground">System Visualizer</div>
+                 <div className="h-full w-full bg-black/50 relative overflow-hidden">
                     <ArchitectureDiagram isVisible={showResult} />
                  </div>
             </div>

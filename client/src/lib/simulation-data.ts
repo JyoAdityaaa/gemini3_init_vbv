@@ -3,10 +3,10 @@ import { Activity, CircleDollarSign, ShieldAlert, Scale, BrainCircuit } from "lu
 export type AgentRole = "performance" | "cost" | "reliability" | "consensus";
 
 export interface AgentMessage {
-  id?: string;
+  id?: string; // Optional id since we generate it at runtime
   role: AgentRole;
   content: string;
-  timestamp?: number;
+  timestamp?: number; // Optional timestamp since we generate it at runtime
   type: "proposal" | "critique" | "resolution";
 }
 
@@ -52,7 +52,7 @@ export const SIMULATION_STEPS: SimulationStep[] = [
     messages: [
       {
         role: "consensus",
-        content: "Interpreting Diagram: The input is a flowchart for a Factual Query Classifier and LLM pipeline. Key components: Query Classifier, Knowledge Base, Confidence Check, and Audit Store.",
+        content: "Analyzing input requirements: High-scale e-commerce backend. Constraints: Black Friday traffic spikes, limited initial budget.",
         type: "proposal"
       }
     ]
@@ -62,17 +62,17 @@ export const SIMULATION_STEPS: SimulationStep[] = [
     messages: [
       {
         role: "performance",
-        content: "To minimize latency on the 'Factual Query' branch, we must cache Knowledge Base results in Redis. The 'Classify Query' step should be a lightweight model or regex-based router before hitting the heavy LLM to save cycles.",
+        content: "Proposing Microservices Architecture with Event Sourcing. We need aggressive Redis caching at the edge. Separate Read/Write paths (CQRS) are mandatory to handle the read volume during spikes. Async processing for all write operations.",
         type: "proposal"
       },
       {
         role: "cost",
-        content: "Agreed on the router. For the 'LLM Rephrases' step, we should use a smaller, quantized model for internal rephrasing tasks. No need for GPT-4 for simple formatting; it's too expensive at scale.",
-        type: "proposal"
+        content: "Rejecting Microservices. The infrastructure overhead is too high for the initial budget. Kubernetes cluster management costs will bleed us dry. Proposing a Modular Monolith on a single large instance with vertical scaling.",
+        type: "critique"
       },
       {
         role: "reliability",
-        content: "The 'Store in Audit' step is critical for compliance. It must be an asynchronous write to a durable store (like S3 or DynamoDB) so that logging failures don't block the user response path.",
+        content: "Single instance is a single point of failure. Unacceptable. We need at least an Active-Passive DB setup and a message queue (Kafka/SQS) to ensure no orders are dropped if the service crashes.",
         type: "critique"
       }
     ]
@@ -82,13 +82,18 @@ export const SIMULATION_STEPS: SimulationStep[] = [
     messages: [
       {
         role: "performance",
-        content: "If the confidence check fails, we route to 'Reject with Polite'. This path should be statically served or cached to prevent re-triggering the LLM router.",
+        content: "A monolith will choke on DB locks during checkout. We need to at least split the 'Checkout' service to scale independently.",
         type: "critique"
       },
       {
-        role: "reliability",
-        content: "We need an explicit circuit breaker between the 'Fetch' and 'Knowledge Base' steps. If the KB is down, the system should gracefully degrade to the 'Reject' path rather than timing out.",
+        role: "cost",
+        content: "Agreed on splitting Checkout, but keep it simple. No Kafka. Use a managed Postgres with a simple job queue table first.",
         type: "proposal"
+      },
+      {
+        role: "reliability",
+        content: "Job queue table in Postgres will cause bloat and locking issues under load. We MUST use a managed queue service like SQS. It's cheap and reliable.",
+        type: "critique"
       }
     ]
   },
@@ -97,7 +102,7 @@ export const SIMULATION_STEPS: SimulationStep[] = [
     messages: [
       {
         role: "consensus",
-        content: "Final Architecture for LLM Pipeline:\n1. Router: FastAPI with local classifier.\n2. Knowledge Path: Vector DB + Redis Cache layer.\n3. Processing: Asynchronous workers for Audit logging via SQS.\n4. Fail-safe: Circuit breaker patterns on all external API calls.",
+        content: "Synthesizing Final Architecture: Hybrid Approach.\n1. Core System: Modular Monolith for Product/User domains (Low Cost).\n2. Hot Path: Extracted 'Checkout Service' (Performance).\n3. Resilience: Managed SQS for order buffering (Reliability).\n4. Data: Primary Postgres + Redis for Product Catalog cache.",
         type: "resolution"
       }
     ]
@@ -105,24 +110,18 @@ export const SIMULATION_STEPS: SimulationStep[] = [
 ];
 
 export const FINAL_JSON = {
-  diagram_interpretation: {
-    identified_components: ["User Input", "Query Classifier", "Decision Node (Factual?)", "Knowledge Base/API", "Confidence Threshold", "LLM Rephraser", "Audit Store"],
-    data_flows: ["Input -> Classifier -> Routing", "Factual -> KB -> Confidence -> Answer", "Non-Factual/Low-Conf -> Rejection/Logging"],
-    ambiguities: ["Specific threshold value for confidence", "Downtime policy for Knowledge Base"]
-  },
-  final_architecture: {
-    architecture_summary: "Robust LLM Inference Pipeline with Guardrails",
-    db_schema: [
-      "audit_logs: {id, query, response, confidence, latency, timestamp}",
-      "knowledge_cache: {vector_id, query_hash, payload, ttl}"
-    ],
-    api_endpoints: [
-      "POST /v1/query: {input} -> {response, sources}",
-      "GET /v1/health: Readiness check for KB"
-    ],
-    selected_tradeoffs: [
-      "Prioritized cost over response depth by using local classifier",
-      "Accepted eventual consistency for audit logs to maintain low latency"
-    ]
-  }
+  architecture_summary: "Hybrid Modular Monolith with Extracted Checkout Service",
+  selected_tradeoffs: [
+    "Accepted higher latency on inventory updates for eventual consistency",
+    "Chose operational complexity of SQS over DB-as-queue for reliability",
+    "Deferred full microservices to save infrastructure costs"
+  ],
+  components: [
+    { name: "API Gateway", type: "Service", status: "Active" },
+    { name: "Product Service", type: "Module", status: "Monolith" },
+    { name: "Checkout Service", type: "Service", status: "Microservice" },
+    { name: "Order Queue", type: "Infra", status: "SQS" },
+    { name: "Postgres Primary", type: "DB", status: "PaaS" },
+    { name: "Redis Cache", type: "Cache", status: "Cluster" }
+  ]
 };
