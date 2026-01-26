@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { FINAL_JSON } from "@/lib/simulation-data";
+import { Box, Database, Globe, Layers, Zap, ShieldCheck } from "lucide-react";
 
 interface ArchitectureDiagramProps {
   isVisible: boolean;
@@ -8,82 +9,109 @@ interface ArchitectureDiagramProps {
 export function ArchitectureDiagram({ isVisible }: ArchitectureDiagramProps) {
   if (!isVisible) return null;
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { y: 0, opacity: 1 }
+  };
+
   return (
-    <div className="w-full h-full p-6 flex items-center justify-center">
+    <div className="w-full h-full p-8 flex flex-col items-center justify-center bg-black/40 overflow-hidden">
       <motion.div 
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.8 }}
-        className="relative w-full max-w-2xl aspect-video border border-white/10 bg-black/80 rounded-lg p-8 grid grid-cols-3 gap-8"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="relative w-full h-full grid grid-rows-3 gap-8"
       >
-        {/* Abstract diagram generation */}
-        <div className="col-span-1 flex flex-col justify-center items-center gap-4 border-r border-white/10 pr-8">
-            <div className="w-16 h-16 rounded-full border-2 border-cyan-500 flex items-center justify-center text-cyan-500 font-bold bg-cyan-500/10 shadow-[0_0_20px_rgba(6,182,212,0.3)]">
-                WEB
+        {/* Top Layer: Entry */}
+        <div className="flex justify-center items-center relative">
+          <motion.div 
+            variants={itemVariants}
+            className="group relative flex flex-col items-center"
+          >
+            <div className="w-14 h-14 rounded-xl border border-cyan-500/50 bg-cyan-500/10 flex items-center justify-center text-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.2)] group-hover:shadow-[0_0_30px_rgba(6,182,212,0.4)] transition-all">
+              <Globe className="w-7 h-7" />
             </div>
-            <div className="h-12 w-0.5 bg-gradient-to-b from-cyan-500 to-white/20"></div>
-            <div className="w-24 h-12 rounded border border-white/30 flex items-center justify-center text-xs text-white bg-white/5">
-                API GATEWAY
-            </div>
+            <span className="mt-2 text-[10px] font-mono uppercase tracking-tighter text-cyan-400/80">API Gateway</span>
+            
+            {/* Flow lines down */}
+            <div className="absolute top-full h-8 w-px bg-gradient-to-b from-cyan-500/50 to-transparent" />
+          </motion.div>
         </div>
 
-        <div className="col-span-2 relative">
-            <div className="absolute inset-0 grid grid-cols-2 gap-4">
-                 <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 }}
-                    className="border border-purple-500/50 bg-purple-500/10 rounded p-4 flex flex-col gap-2"
-                 >
-                    <span className="text-[10px] text-purple-400 uppercase">Core System</span>
-                    <div className="flex-1 bg-black/40 rounded border border-white/10 flex items-center justify-center text-sm">
-                        Product Monolith
-                    </div>
-                 </motion.div>
-
-                 <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.7 }}
-                    className="border border-green-500/50 bg-green-500/10 rounded p-4 flex flex-col gap-2"
-                 >
-                    <span className="text-[10px] text-green-400 uppercase">Hot Path</span>
-                    <div className="flex-1 bg-black/40 rounded border border-white/10 flex items-center justify-center text-sm">
-                        Checkout Svc
-                    </div>
-                 </motion.div>
-
-                 <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.9 }}
-                    className="border border-orange-500/50 bg-orange-500/10 rounded p-4 flex flex-col gap-2 col-span-2"
-                 >
-                    <span className="text-[10px] text-orange-400 uppercase">Persistence Layer</span>
-                    <div className="flex gap-4 h-full">
-                        <div className="flex-1 bg-black/40 rounded border border-white/10 flex items-center justify-center text-xs">
-                             Primary DB (PG)
-                        </div>
-                        <div className="flex-1 bg-black/40 rounded border border-white/10 flex items-center justify-center text-xs">
-                             Redis Cluster
-                        </div>
-                        <div className="flex-1 bg-black/40 rounded border border-white/10 flex items-center justify-center text-xs text-orange-400">
-                             SQS Queue
-                        </div>
-                    </div>
-                 </motion.div>
+        {/* Middle Layer: Services */}
+        <div className="flex justify-around items-center gap-12 relative px-4">
+          <motion.div variants={itemVariants} className="flex flex-col items-center group">
+            <div className="w-16 h-16 rounded-lg border border-purple-500/50 bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform">
+              <Layers className="w-8 h-8" />
             </div>
+            <span className="mt-2 text-[10px] font-mono uppercase text-purple-400/80">Product Monolith</span>
+          </motion.div>
+
+          <motion.div variants={itemVariants} className="flex flex-col items-center group">
+             <div className="relative">
+                <div className="absolute -inset-1 bg-green-500/20 blur-sm rounded-full animate-pulse" />
+                <div className="relative w-16 h-16 rounded-lg border border-green-500/50 bg-green-500/10 flex items-center justify-center text-green-400 group-hover:scale-110 transition-transform">
+                  <Zap className="w-8 h-8" />
+                </div>
+             </div>
+            <span className="mt-2 text-[10px] font-mono uppercase text-green-400/80">Checkout Service</span>
+          </motion.div>
+
+          <motion.div variants={itemVariants} className="flex flex-col items-center group">
+            <div className="w-16 h-16 rounded-lg border border-orange-500/50 bg-orange-500/10 flex items-center justify-center text-orange-400 group-hover:scale-110 transition-transform">
+              <ShieldCheck className="w-8 h-8" />
+            </div>
+            <span className="mt-2 text-[10px] font-mono uppercase text-orange-400/80">SQS Buffer</span>
+          </motion.div>
         </div>
-        
-        {/* Connecting lines overlay - simplified */}
-        <svg className="absolute inset-0 pointer-events-none w-full h-full opacity-30">
-            <path d="M 150 150 L 300 100" stroke="white" fill="none" strokeDasharray="4 4" />
-            <path d="M 150 150 L 300 250" stroke="white" fill="none" strokeDasharray="4 4" />
+
+        {/* Bottom Layer: Data */}
+        <div className="flex justify-center gap-16 items-center border-t border-white/5 pt-4">
+          <motion.div variants={itemVariants} className="flex items-center gap-3 glass-panel px-4 py-2 rounded-md border-blue-500/30">
+            <Database className="w-4 h-4 text-blue-400" />
+            <div className="flex flex-col">
+              <span className="text-[9px] text-white/40 uppercase font-mono">Persistence</span>
+              <span className="text-xs text-blue-200 font-mono">PostgreSQL</span>
+            </div>
+          </motion.div>
+
+          <motion.div variants={itemVariants} className="flex items-center gap-3 glass-panel px-4 py-2 rounded-md border-red-500/30">
+            <Box className="w-4 h-4 text-red-400" />
+            <div className="flex flex-col">
+              <span className="text-[9px] text-white/40 uppercase font-mono">Cache</span>
+              <span className="text-xs text-red-200 font-mono">Redis Cluster</span>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Animated Background SVG for connections */}
+        <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-20" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="grad-line" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="cyan" />
+              <stop offset="100%" stopColor="purple" />
+            </linearGradient>
+          </defs>
+          <motion.path 
+            initial={{ pathLength: 0 }}
+            animate={{ pathLength: 1 }}
+            transition={{ duration: 2, delay: 1 }}
+            d="M 50% 15% L 25% 45% M 50% 15% L 50% 45% M 50% 15% L 75% 45%" 
+            stroke="url(#grad-line)" 
+            strokeWidth="1" 
+            fill="none"
+          />
         </svg>
-
-        <div className="absolute top-4 right-4 text-xs font-mono text-white/50 border px-2 py-1 rounded border-white/10">
-            v1.0.4-release
-        </div>
       </motion.div>
     </div>
   );

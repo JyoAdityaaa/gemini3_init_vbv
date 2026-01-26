@@ -160,9 +160,9 @@ export default function SimulationPage() {
                 )}
             </div>
 
-            <div className="h-1/3 border-t border-white/10 bg-black/20 p-4">
-                 <div className="text-[10px] font-mono uppercase text-muted-foreground mb-2">Visualizer Preview</div>
-                 <div className="h-full w-full bg-black/50 rounded border border-white/5 relative overflow-hidden">
+            <div className="h-full border-t border-white/10 bg-black/20">
+                 <div className="p-3 border-b border-white/5 text-[10px] font-mono uppercase text-muted-foreground">System Visualizer</div>
+                 <div className="h-full w-full bg-black/50 relative overflow-hidden">
                     <ArchitectureDiagram isVisible={showResult} />
                  </div>
             </div>
