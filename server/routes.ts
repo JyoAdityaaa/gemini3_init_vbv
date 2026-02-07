@@ -26,11 +26,18 @@ export async function registerRoutes(
       };
 
       // 2. Call n8n Webhook
-      const N8N_URL = process.env.N8N_WEBHOOK_URL || "YOUR_N8N_WEBHOOK_URL_HERE"; 
-      
+      // 👇 Your actual working ngrok URL
+      const N8N_URL = "https://dorris-unhashed-subarticulately.ngrok-free.dev/webhook/analyze-architecture";
+
+      console.log(`⚡ Connecting to AI Brain at: ${N8N_URL}`);
+
       const response = await fetch(N8N_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          // 👇 CRITICAL: Bypasses the ngrok warning page
+          "ngrok-skip-browser-warning": "true" 
+        },
         body: JSON.stringify(n8nPayload)
       });
 

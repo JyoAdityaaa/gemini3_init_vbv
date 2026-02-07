@@ -139,20 +139,19 @@ export default function ArchitectureDiagram({ diagram, isVisible }: Architecture
         ) : (
           <div className="w-full h-full overflow-auto flex items-center justify-center custom-scrollbar">
             {error && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10 p-6 text-center">
-                <div className="flex flex-col items-center gap-2 max-w-xs">
-                  <AlertCircle className="w-8 h-8 text-red-500" />
-                  <p className="text-xs font-mono text-red-400">{error}</p>
-                  <Button variant="outline" size="sm" onClick={() => setShowRaw(true)} className="mt-2 text-[10px]">
-                    DEBUG CODE
-                  </Button>
-                </div>
+              <div className="absolute top-2 right-2 bg-red-500/20 text-red-300 p-2 rounded text-[10px] font-mono border border-red-500/30 backdrop-blur-md z-10">
+                Diagram Syntax Error - Showing Raw
               </div>
             )}
             <div 
               ref={elementRef} 
-              className="w-full h-full flex items-center justify-center [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:h-auto"
+              className={`w-full h-full flex items-center justify-center [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:h-auto ${error ? 'opacity-0' : 'opacity-100'}`}
             />
+            {error && (
+               <div className="absolute inset-0 p-4 font-mono text-xs text-red-300/70 overflow-auto custom-scrollbar">
+                  <pre className="whitespace-pre-wrap">{superParse(diagram)}</pre>
+               </div>
+            )}
           </div>
         )}
       </CardContent>

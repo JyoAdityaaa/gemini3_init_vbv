@@ -69,17 +69,24 @@ ${data.suggestedImprovements?.map((i: string) => `- [ACTION] ${i}`).join('\n') |
       });
       const data = await res.json();
       
-      // Fallback Diagram if missing
-      if (!data.architectureDiagram) {
-        data.architectureDiagram = "Client[User] --> LB[Load Balancer]; LB --> API[Backend API]; API --> DB[Database];";
+      if (!res.ok || data.error) {
+        throw new Error(data.details || data.error || "Analysis failed");
       }
+
       setResult(data);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      toast({ 
+        title: "Simulation Error", 
+        description: err.message || "Failed to analyze architecture. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
   }
+
+  const hasDiagram = !!result?.architectureDiagram && result.architectureDiagram.length > 10;
 
   return (
     <div className="h-screen w-full overflow-y-auto p-4 md:p-6 bg-background text-foreground pb-20 relative">
@@ -113,7 +120,7 @@ ${data.suggestedImprovements?.map((i: string) => `- [ACTION] ${i}`).join('\n') |
         </div>
 
         {/* Input & Output */}
-        <div className="col-span-1 lg:col-span-6 flex flex-col gap-4">
+        <div className={`col-span-1 ${hasDiagram ? 'lg:col-span-6' : 'lg:col-span-9'} flex flex-col gap-4`}>
           <Textarea 
             value={input} 
             onChange={(e) => setInput(e.target.value)} 
@@ -230,18 +237,20 @@ ${data.suggestedImprovements?.map((i: string) => `- [ACTION] ${i}`).join('\n') |
           )}
         </div>
 
-        {/* Diagram Area */}
-        <div className="col-span-1 lg:col-span-4 flex flex-col gap-6">
-          <div className="flex-1 min-h-[500px]">
-            <ArchitectureDiagram 
-              diagram={result?.architectureDiagram || ""} 
-              isVisible={!!result}
-            />
+        {/* Diagram Area - Only show if valid diagram exists */}
+        {hasDiagram && (
+          <div className="col-span-1 lg:col-span-4 flex flex-col gap-6">
+            <div className="flex-1 min-h-[500px]">
+              <ArchitectureDiagram 
+                diagram={result?.architectureDiagram} 
+                isVisible={!!result}
+              />
+            </div>
+            <div className="h-[300px]">
+              <SystemTopology diagram={result?.architectureDiagram} />
+            </div>
           </div>
-          <div className="h-[300px]">
-            <SystemTopology diagram={result?.architectureDiagram || ""} />
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
