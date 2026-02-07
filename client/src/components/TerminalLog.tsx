@@ -2,12 +2,14 @@ import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AgentMessage, AGENTS } from "@/lib/simulation-data";
 import { cn } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
 
 interface TerminalLogProps {
   messages: AgentMessage[];
+  isPending?: boolean;
 }
 
-export function TerminalLog({ messages }: TerminalLogProps) {
+export function TerminalLog({ messages, isPending }: TerminalLogProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -29,7 +31,7 @@ export function TerminalLog({ messages }: TerminalLogProps) {
       
       <div 
         ref={scrollRef}
-        className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent"
+        className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar"
       >
         <AnimatePresence mode="popLayout">
           {messages.map((msg, idx) => {
@@ -61,7 +63,20 @@ export function TerminalLog({ messages }: TerminalLogProps) {
           })}
         </AnimatePresence>
         
-        {messages.length === 0 && (
+        {isPending && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center gap-3 p-3 border-l-2 border-primary/30 bg-primary/5 italic text-primary/70"
+          >
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span className="text-xs font-mono uppercase tracking-widest animate-pulse">
+              System analyzing architecture...
+            </span>
+          </motion.div>
+        )}
+        
+        {messages.length === 0 && !isPending && (
           <div className="text-white/20 italic text-center mt-10">
             Waiting for system input...
           </div>

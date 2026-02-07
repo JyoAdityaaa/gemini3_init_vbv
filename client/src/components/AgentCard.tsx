@@ -21,7 +21,7 @@ export function AgentCard({ role, isActive, isSpeaking, latestMessage }: AgentCa
         boxShadow: isSpeaking ? `0 0 20px ${agent.color}40` : "none"
       }}
       className={cn(
-        "glass-panel p-4 rounded-lg border transition-colors duration-500 flex flex-col h-full relative overflow-hidden",
+        "glass-panel p-4 rounded-lg border transition-colors duration-500 flex flex-col relative overflow-hidden",
         isActive ? "opacity-100" : "opacity-50 grayscale"
       )}
       style={{

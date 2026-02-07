@@ -8,3 +8,9 @@ vite.config.ts.*
 __MACOSX/
 .local/
 *.code-profile
+
+# Secrets
+*.pem
+*.key
+secrets.*
+.env.*

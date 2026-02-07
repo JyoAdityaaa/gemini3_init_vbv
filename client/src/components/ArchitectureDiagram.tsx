@@ -1,100 +1,161 @@
-import { motion } from "framer-motion";
-import { Box, Database, Globe, Layers, Zap, ShieldCheck } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import mermaid from "mermaid";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Maximize2, Minimize2, AlertCircle, Code } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface ArchitectureDiagramProps {
+  diagram: string;
   isVisible: boolean;
 }
 
-export function ArchitectureDiagram({ isVisible }: ArchitectureDiagramProps) {
-  if (!isVisible) return null;
+export default function ArchitectureDiagram({ diagram, isVisible }: ArchitectureDiagramProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [showRaw, setShowRaw] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const elementRef = useRef<HTMLDivElement>(null);
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2
+  useEffect(() => {
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: "dark",
+      securityLevel: "loose",
+      fontFamily: "Inter, sans-serif",
+      flowchart: {
+        useMaxWidth: true,
+        htmlLabels: true,
+        curve: 'basis'
+      }
+    });
+  }, []);
+
+  const superParse = (raw: string) => {
+    if (!raw) return "";
+
+    // 1. Clean markdown blocks
+    let clean = raw.replace(/```mermaid\n?([\s\S]*?)\n?```/g, "$1")
+                   .replace(/```/g, "")
+                   .trim();
+    
+    let lines = clean.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    
+    // 2. Ensure header
+    const hasHeader = lines.some(l => /^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|gantt|pie|gitGraph)/i.test(l));
+    if (!hasHeader && lines.length > 0) {
+       lines.unshift("graph TD");
+    }
+
+    // 3. Robust Line Parsing
+    return lines.map(line => {
+      // Logic for preserving subgraphs and ends
+      if (line.toLowerCase().startsWith('subgraph') || line.toLowerCase().startsWith('end')) {
+        return line;
+      }
+
+      // Logic for cleaning connections
+      if (line.includes('-->') || line.includes('-.->') || line.includes('==>')) {
+        const separator = line.includes('-->') ? '-->' : line.includes('-.->') ? '-.->' : '==>';
+        return line.split(separator).map(part => {
+          let text = part.trim();
+          if (!text) return "";
+
+          // Match ID[Label] or ID(Label) or ID{Label}
+          const match = text.match(/^([\w\.\-]+)?\s*[\[\(\{\>](.*)[\]\)\}\>]$/);
+          if (match) {
+            const id = (match[1] || match[2]).replace(/[^\w]/g, '_');
+            const label = match[2].trim();
+            const startBracket = text.match(/[\[\(\{\>]/)?.[0] || '[';
+            const endBracket = text.match(/[\]\)\}\>]/)?.[0] || ']';
+            return `${id}${startBracket}"${label.replace(/"/g, "'")}"${endBracket}`;
+          }
+          
+          // Raw text cleanup
+          const safeId = text.replace(/[^\w]/g, '_');
+          return `${safeId}["${text.replace(/"/g, "'")}"]`;
+        }).join(` ${separator} `);
+      }
+      return line;
+    }).join('\n');
+  };
+
+  useEffect(() => {
+    if (isVisible && diagram && elementRef.current) {
+      const cleanDiagram = superParse(diagram);
+      const renderId = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
+      
+      elementRef.current.innerHTML = '';
+      setError(null);
+
+      try {
+        mermaid.render(renderId, cleanDiagram).then(({ svg }) => {
+          if (elementRef.current) {
+            elementRef.current.innerHTML = svg;
+          }
+        }).catch(err => {
+          console.error("Mermaid async error:", err);
+          setError("Render failed. Using fallback view.");
+        });
+      } catch (err) {
+        console.error("Mermaid sync error:", err);
+        setError("Syntax error detected.");
       }
     }
-  };
+  }, [diagram, isVisible]);
 
-  const itemVariants = {
-    hidden: { y: 10, opacity: 0 },
-    visible: { y: 0, opacity: 1 }
-  };
+  if (!isVisible) return null;
 
   return (
-    <div className="w-full h-full p-4 flex flex-col items-center justify-center bg-black/20 overflow-hidden">
-      <motion.div 
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="w-full h-full flex flex-col justify-between py-2 relative"
-      >
-        {/* Top Layer: Entry */}
-        <div className="flex justify-center items-center z-10">
-          <motion.div 
-            variants={itemVariants}
-            className="flex flex-col items-center"
+    <Card className={`transition-all duration-300 bg-black/40 border-white/10 ${isExpanded ? "fixed inset-4 z-50 h-[95vh]" : "h-full"}`}>
+      <CardHeader className="flex flex-row items-center justify-between py-3 border-b border-white/5">
+        <CardTitle className="text-[10px] font-mono font-bold uppercase tracking-[0.3em] text-cyan-500 flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
+          SYSTEM BLUEPRINT
+        </CardTitle>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowRaw(!showRaw)}
+            className="h-7 text-[9px] font-mono border-white/10 hover:bg-white/5 px-2 flex items-center gap-1"
           >
-            <div className="w-10 h-10 rounded-lg border border-cyan-500/50 bg-cyan-500/10 flex items-center justify-center text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.2)]">
-              <Globe className="w-5 h-5" />
-            </div>
-            <span className="mt-1 text-[8px] font-mono uppercase tracking-tighter text-cyan-400/80">API Gateway</span>
-          </motion.div>
+            {showRaw ? <Code className="w-3 h-3" /> : <Code className="w-3 h-3 opacity-50" />}
+            {showRaw ? "VIEW DIAGRAM" : "VIEW CODE"}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="h-8 w-8 text-white/50 hover:text-white"
+          >
+            {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </Button>
         </div>
-
-        {/* Middle Layer: Services */}
-        <div className="flex justify-around items-center gap-4 z-10">
-          <motion.div variants={itemVariants} className="flex flex-col items-center">
-            <div className="w-12 h-12 rounded-lg border border-purple-500/50 bg-purple-500/10 flex items-center justify-center text-purple-400">
-              <Layers className="w-6 h-6" />
-            </div>
-            <span className="mt-1 text-[8px] font-mono uppercase text-purple-400/80">Monolith</span>
-          </motion.div>
-
-          <motion.div variants={itemVariants} className="flex flex-col items-center">
-            <div className="w-12 h-12 rounded-lg border border-green-500/50 bg-green-500/10 flex items-center justify-center text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.2)]">
-              <Zap className="w-6 h-6" />
-            </div>
-            <span className="mt-1 text-[8px] font-mono uppercase text-green-400/80">Checkout</span>
-          </motion.div>
-
-          <motion.div variants={itemVariants} className="flex flex-col items-center">
-            <div className="w-12 h-12 rounded-lg border border-orange-500/50 bg-orange-500/10 flex items-center justify-center text-orange-400">
-              <ShieldCheck className="w-6 h-6" />
-            </div>
-            <span className="mt-1 text-[8px] font-mono uppercase text-orange-400/80">SQS</span>
-          </motion.div>
-        </div>
-
-        {/* Bottom Layer: Data */}
-        <div className="flex justify-center gap-6 items-center z-10">
-          <motion.div variants={itemVariants} className="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded border border-blue-500/30">
-            <Database className="w-3 h-3 text-blue-400" />
-            <span className="text-[9px] text-blue-200 font-mono uppercase tracking-tighter">PostgreSQL</span>
-          </motion.div>
-
-          <motion.div variants={itemVariants} className="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded border-red-500/30">
-            <Box className="w-3 h-3 text-red-400" />
-            <span className="text-[9px] text-red-200 font-mono uppercase tracking-tighter">Redis</span>
-          </motion.div>
-        </div>
-
-        {/* Connection Overlay */}
-        <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-20" preserveAspectRatio="none">
-          <motion.path 
-            initial={{ pathLength: 0 }}
-            animate={{ pathLength: 1 }}
-            transition={{ duration: 1, delay: 0.5 }}
-            d="M 50% 15% L 25% 45% M 50% 15% L 50% 45% M 50% 15% L 75% 45% M 25% 55% L 40% 85% M 50% 55% L 50% 85% M 75% 55% L 60% 85%" 
-            stroke="white" 
-            strokeWidth="0.5" 
-            fill="none"
-          />
-        </svg>
-      </motion.div>
-    </div>
+      </CardHeader>
+      <CardContent className="h-[calc(100%-50px)] w-full overflow-hidden bg-black/20 p-2">
+        {showRaw ? (
+          <div className="w-full h-full bg-black/40 p-4 font-mono text-xs text-cyan-300/70 overflow-auto custom-scrollbar rounded border border-white/5">
+            <pre className="whitespace-pre-wrap">{superParse(diagram)}</pre>
+          </div>
+        ) : (
+          <div className="w-full h-full overflow-auto flex items-center justify-center custom-scrollbar">
+            {error && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10 p-6 text-center">
+                <div className="flex flex-col items-center gap-2 max-w-xs">
+                  <AlertCircle className="w-8 h-8 text-red-500" />
+                  <p className="text-xs font-mono text-red-400">{error}</p>
+                  <Button variant="outline" size="sm" onClick={() => setShowRaw(true)} className="mt-2 text-[10px]">
+                    DEBUG CODE
+                  </Button>
+                </div>
+              </div>
+            )}
+            <div 
+              ref={elementRef} 
+              className="w-full h-full flex items-center justify-center [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:h-auto"
+            />
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

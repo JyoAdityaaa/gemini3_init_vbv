@@ -18,6 +18,12 @@ export type AgentRole =
   | "security"
   | "consensus";
 
+export interface AgentMessage {
+  role: AgentRole;
+  content: string;
+  type?: "critique" | "resolution" | "thought";
+}
+
 export interface AgentUIConfig {
   name: string;
   role: AgentRole;
