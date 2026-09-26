@@ -1,0 +1,428 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        2800,
+        240
+      ],
+      "id": "e6ca58e3-8596-4b88-8caa-16efd505979e",
+      "name": "Aggregate",
+      "alwaysOutputData": true,
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2048,
+        240
+      ],
+      "id": "c7c52352-bbe5-4806-a32f-581c16a7e72f",
+      "name": "Wait",
+      "webhookId": "1792fabe-18bb-42b0-970f-c0d657f4b838"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3-flash-preview",
+          "mode": "list",
+          "cachedResultName": "models/gemini-3-flash-preview"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are the Lead Auditor.\n\nYou will receive exactly 3 architecture reports:\n1. FinOps\n2. Performance\n3. SRE\n\nYour task:\n- Identify which findings are VALIDATED (credible, actionable)\n- Identify which findings are REJECTED (generic, weak, or invalid)\n\nCRITICAL RULES:\n- You MUST pass through:\n  - cost_estimate from FinOps\n  - risk_score_component from ALL 3 agents\n- Do NOT modify numbers.\n- Do NOT invent new findings.\n- Do NOT add commentary.\n- Return JSON ONLY. No markdown. No explanations.\n\nOutput format (STRICT):\n{\n  \"validated_issues\": [\"string\"],\n  \"rejected_issues\": [\"string\"],\n  \"finOps_data\": {\n    \"cost_estimate\": \"string\",\n    \"risk\": number\n  },\n  \"perf_data\": {\n    \"risk\": number,\n    \"findings\": [\"string\"]\n  },\n  \"sre_data\": {\n    \"risk\": number,\n    \"findings\": [\"string\"]\n  }\n}",
+              "role": "model"
+            },
+            {
+              "content": "={{ JSON.stringify($json) }}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        2944,
+        240
+      ],
+      "id": "40cf8b0f-c4c1-46e0-bfa8-71dd22369c85",
+      "name": "Critic Agent",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "lyuUP1igcNUhKNEq",
+          "name": "Critic Agent"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3-flash-preview",
+          "mode": "list",
+          "cachedResultName": "models/gemini-3-flash-preview"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a Site Reliability Engineer.\n\nReturn strict JSON:\n{\n  \"agentName\": \"SRE\",\n  \"findings\": [string],\n  \"warnings\": [string],\n  \"risk_score_component\": number\n}\n\nRules:\n- Focus only on availability, scaling, SPOFs.\n- Max 5 findings.\n- Each must identify a failure mode.\n- Rank by impact.\n- risk_score_component must be integer 0–100, not decimal.",
+              "role": "model"
+            },
+            {
+              "content": "=Architecture:\n{{ $json.content.parts[0].text }}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        2512,
+        400
+      ],
+      "id": "143a1653-32ff-4590-a400-29fca31cf963",
+      "name": "Reliability Agent",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a Senior Cloud Architecture Reviewer.\n\nInput:\n{{ JSON.stringify($json) }}\n\nGenerate strict JSON:\n{\n  \"riskScore\": number,\n  \"keyFindings\": [string],\n  \"recommendations\": [string],\n  \"reasoning\": string,\n  \"monthlyCost\": string,\n  \"architectureDiagram\": string\n}\n\nRules:\n- keyFindings: Top 5 most critical issues.\n- recommendations: Top 5 actionable improvements.\n- reasoning: Max 5 sentences.\n- Remove duplicates.\n- Remove generic advice.\n- Focus on feasibility under given constraints.\n- architectureDiagram must be valid Mermaid Markdown only.\n- Provide clear non technical explanation for user to understand the architecture."
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        3376,
+        240
+      ],
+      "id": "f88bc813-59fc-4d57-ac02-4aac315f7d14",
+      "name": "Consensus Engine",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "executeOnce": false,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "gofSncH5ZEhhzOIx",
+          "name": "Final Synthesizer other"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a Performance and Scalability Architect.\n\nReturn strict JSON:\n{\n  \"agentName\": \"Performance\",\n  \"findings\": [string],\n  \"warnings\": [string],\n  \"risk_score_component\": number\n}\n\nRules:\n- Max 5 findings.\n- Focus on latency, throughput, and bottlenecks.\n- Identify missing caching, CDN, load balancing, or network issues.\n- Each finding must reference a specific component.\n- Rank by performance impact.",
+              "role": "model"
+            },
+            {
+              "content": "=Architecture:\n{{ $json.content.parts[0].text }}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        2512,
+        240
+      ],
+      "id": "1f911209-68b7-4403-ba26-91b9725b0270",
+      "name": "Performance Architect",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3-flash-preview",
+          "mode": "list",
+          "cachedResultName": "models/gemini-3-flash-preview"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "You are a parser.\nExtract structured architecture from text.\n\nReturn strict JSON only with:\nprimary_cloud, components, constraints.\n\nDo not infer. Do not analyze. Do not explain.",
+              "role": "model"
+            },
+            {
+              "content": "==System description:\n{{$json.body.description}}\n\nContext:\nBudget {{$json.body.budget}}\nUsers {{$json.body.users}}\nUptime {{$json.body.uptime}}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        2208,
+        240
+      ],
+      "id": "7f74f0d8-88a0-4eeb-9e1e-1deecd70c9ff",
+      "name": "Normalizer Agent",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "aYaHKTCmpkulbJp8",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        3648,
+        240
+      ],
+      "id": "44039947-5ccb-4526-9866-b93b5646111b",
+      "name": "Respond to Webhook",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a FinOps Cloud Cost Optimization Expert specializing in AWS.\n\nAnalyze this architecture:\n{{ JSON.stringify($json) }}\n\nReturn STRICT JSON ONLY with the following fields:\n\n{\n  \"agentName\": \"Cost Agent\",\n  \"monthlyCost\": \"string\",     \n  \"riskScore\": number,         \n  \"keyFindings\": [string],     \n  \"recommendations\": [string]  \n}",
+              "role": "model"
+            },
+            {
+              "content": "=Architecture:\n{{ $json.content.parts[0].text }}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        2512,
+        64
+      ],
+      "id": "df0e5764-6bef-4caa-8d78-f3f25fcf297b",
+      "name": "Cost Agent",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "HRQg6cqTj9CAc2D5",
+          "name": "Cost Agent 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * Deterministic Resolver - Final Production Version\n * Optimized for: Consensus Engine -> Webhook flow\n */\n\n// 1. Extract raw text from the node immediately preceding this one (Consensus Engine)\nconst rawData = $json.content?.parts?.[0]?.text || $json.text || $json;\n\nlet parsed;\ntry {\n  // 2. Clean markdown and parse string into an Object\n  parsed = typeof rawData === 'string' \n    ? JSON.parse(rawData.replace(/```json|```/g, \"\").trim()) \n    : rawData;\n} catch (e) {\n  // Safe fallback if the AI output is garbled or not JSON\n  return [{ \n    json: { \n      error: \"Parse error\", \n      rawData: String(rawData).substring(0, 100),\n      safeMessage: \"The AI output could not be parsed into valid JSON.\"\n    } \n  }];\n}\n\n// 3. Normalization Logic (Defensive Programming)\nconst normalizeRisk = (val) => {\n  if (val === null || val === undefined) return 0;\n  const num = parseFloat(val);\n  // Handles the 0.95 vs 95 scale discrepancy\n  return (num > 0 && num <= 1) ? Math.round(num * 100) : Math.round(num);\n};\n\n// 4. Final Data Assembly with Fallbacks\nconst finalOutput = {\n  // Checks multiple possible keys for risk scores\n  riskScore: parsed.riskScore || normalizeRisk(parsed.risk) || normalizeRisk(parsed.risk_score_component) || 0,\n  \n  // Robust fallbacks for findings and recommendations\n  keyFindings: (parsed.keyFindings || parsed.validated_issues || parsed.findings || []).slice(0, 6),\n  recommendations: (parsed.recommendations || parsed.warnings || []).slice(0, 6),\n  \n  reasoning: parsed.reasoning || \"Consolidated architectural analysis completed successfully.\",\n  \n  // Handles nested cost objects or flat strings\n  monthlyCost: parsed.monthlyCost || parsed.finOps_data?.cost_estimate || parsed.cost_estimate || \"N/A\"\n};\n\n// 5. Return in the standard n8n array format\nreturn [{ json: finalOutput }];"
+      },
+      "id": "26dd56dd-0a33-42fc-bf66-de248cde3e53",
+      "name": "Deterministic Resolver",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3216,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "analyze-architecture",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "878b5bc8-7491-46ea-b92e-6c6ddeafd2ee",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        1888,
+        240
+      ],
+      "webhookId": "7490dd9c-dc52-45ea-ba88-c95b8b68badc"
+    }
+  ],
+  "connections": {
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Critic Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Normalizer Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Critic Agent": {
+      "main": [
+        [
+          {
+            "node": "Deterministic Resolver",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reliability Agent": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consensus Engine": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Performance Architect": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizer Agent": {
+      "main": [
+        [
+          {
+            "node": "Reliability Agent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Performance Architect",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Cost Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cost Agent": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deterministic Resolver": {
+      "main": [
+        [
+          {
+            "node": "Consensus Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b7e16684180873bc24b438383fc5692bad8f552d2381546a53490d430a341241"
+  }
+}
